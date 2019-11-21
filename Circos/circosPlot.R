@@ -22,8 +22,9 @@ chrLengths = fread("chrLengths.txt")
 #56:  HumanChr1     1 249250621
 
 # Load links for overlapping regions between two genomes as the result of whole genome-genome alignment
-links = dplyr::select(fread("bedf.bed"),c(1,2,3,4,5,6,9))
-# Its a bed file where 1,2,3. columns represent lemur and 4,5,6. columns represent aligned regions of human:
+links = fread("bedf.bed")
+links = links[,c(1,2,3,4,5,6,9)]
+# Its a bed file where 1,2,3. columns represent lemur and 4,5,6. columns represent aligned regions of human and 9. column is the alignment ratio:
 #chr1	17703769	17709999	HumanChr3	25469161	25475344	0	+	88.472443	+	5738
 #chr1	67213689	67219159	HumanChr3	173513208	173518761	0	+	84.097366	+	5470
 #chr1	76715866	76721084	HumanChr3	183880975	183886195	0	+	85.458992	+	5218
