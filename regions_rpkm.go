@@ -77,36 +77,46 @@ func (r Ranges) Search(v int) string {
 }
 
 func main() {
-	allRegions, lemurRegions, humanRegions := parseRegions("/cta/users/umitakkose/lemur/overlap_wGenes.bed")
+
+	overlappingRegionsBed := "overlap_wGenes.bed"
+	lemurSimulatedReadsBed := "lemur_simulated.bed"
+	humanSimulatedReadsBed := "human_simulated.bed"
+	lemurXRReadsBed := "lemur_xr.bed"
+	humanXRReadsBed := "human_xr.bed"
+	lemurRNAReadsBed := "lemur_rna.bed"
+	humanRNAReadsBed := "human_rna.bed"
+	rpkmOut := "results.tsv"
+	quartersOutPrefix := "results"
+	allRegions, lemurRegions, humanRegions := parseRegions(overlappingRegionsBed)
 
 	start := time.Now()
-	allRegions, lemurSimLineCount := parseLemurSimBed("/cta/users/umitakkose/lemur/random_shuffled_lemur_cutadapt_sorted_plus.bed", allRegions, lemurRegions)
+	allRegions, lemurSimLineCount := parseLemurSimBed(lemurSimulatedReadsBed, allRegions, lemurRegions)
 	elapsed := time.Since(start)
 	fmt.Printf("Finished Parsing Lemur Sim Bed file in : %s\n", elapsed)
 
 	start = time.Now()
-	allRegions, humanSimLineCount := parseHumanSimBed("/cta/users/umitakkose/lemur/random_shuffled_human_cutadapt_sorted_plus.bed", allRegions, humanRegions)
+	allRegions, humanSimLineCount := parseHumanSimBed(humanSimulatedReadsBed, allRegions, humanRegions)
 	elapsed = time.Since(start)
 	fmt.Printf("Finished Parsing Human Sim Bed file in : %s\n", elapsed)
 
 	start = time.Now()
-	allRegions, lemurXrLineCount := parseLemurBed("/cta/groups/adebali/data/lemur/res/CPD_60m_A/Lemur_CPD_GTCCGC_S5_L002_R1_001_cutadapt_sorted.bed", allRegions, lemurRegions)
+	allRegions, lemurXrLineCount := parseLemurBed(lemurXRReadsBed, allRegions, lemurRegions)
 	elapsed = time.Since(start)
 	fmt.Printf("Finished Parsing Lemur Bed file in : %s\n", elapsed)
 
 	start = time.Now()
-	allRegions, humanXrLineCount := parseHumanBed("/cta/groups/adebali/data/human/GSM1659156_cutadapt_sorted.bed", allRegions, humanRegions)
+	allRegions, humanXrLineCount := parseHumanBed(humanXRReadsBed, allRegions, humanRegions)
 	elapsed = time.Since(start)
 	fmt.Printf("Finished Parsing Human Bed file in : %s\n", elapsed)
 
 	// filter 0 reads
 	start = time.Now()
-	allRegions, lemurRNALineCount := parseLemurRNABed("/cta/groups/adebali/data/lemur/reads/Lemur1_cutadapt_sorted.bed", allRegions, lemurRegions)
+	allRegions, lemurRNALineCount := parseLemurRNABed(lemurRNAReadsBed, allRegions, lemurRegions)
 	elapsed = time.Since(start)
 	fmt.Printf("Finished Parsing Lemur RNA Bed file in : %s\n", elapsed)
 
 	start = time.Now()
-	allRegions, humanRNALineCount := parseHumanRNABed("/cta/groups/adebali/data/human/rnaseq/SRR3192539_cutadapt_sorted.bed", allRegions, humanRegions)
+	allRegions, humanRNALineCount := parseHumanRNABed(humanRNAReadsBed, allRegions, humanRegions)
 	elapsed = time.Since(start)
 	fmt.Printf("Finished Parsing Human RNA Bed file in : %s\n", elapsed)
 
@@ -117,13 +127,13 @@ func main() {
 	elapsed = time.Since(start)
 	fmt.Printf("Finished calculating RPKM in : %s\n", elapsed)
 
-	writeCounts("/cta/users/umitakkose/lemur/random_final_go/res.tsv", allRegions)
+	writeCounts(rpkmOut, allRegions)
 
-	writeQuartersIdentity("/cta/users/umitakkose/lemur/random_final_go/res", allRegions)
+	writeQuartersIdentity(quartersOutPrefix, allRegions)
 
-	writeQuartersRNALemur("/cta/users/umitakkose/lemur/random_final_go/res", allRegions)
+	writeQuartersRNALemur(quartersOutPrefix, allRegions)
 
-	writeQuartersRNAHuman("/cta/users/umitakkose/lemur/random_final_go/res", allRegions)
+	writeQuartersRNAHuman(quartersOutPrefix, allRegions)
 
 }
 
