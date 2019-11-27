@@ -8,7 +8,7 @@ parser.add_argument('--tss', type=str,
                     help='biomart export containing TSS coordinates')
 parser.add_argument('-O', type=str, help='output directory')
 parser.add_argument('-S', type=str, help='sample name')
-parser.add_argument('--specie', type=str, help='human or lemur')
+parser.add_argument('-L', type=str, help='csv file with chromosome names and lengths')
 
 args = parser.parse_args()
 
@@ -17,14 +17,14 @@ biomart = args.tss
 outdir = args.O
 plusreads = args.P
 minusreads = args.M
-specie = args.specie
+chr_lengths = args.L
 
 chr = {}
 tssplus = {}
 tssminus = {}
 chrnames = []
 
-with open("/cta/users/umitakkose/tsnts/" + specie + ".txt", "r") as chrlist:
+with open(chr_lengths, "r") as chrlist:
     for line in chrlist:
         ls = line.split(",")
         chr[str(ls[0])[3:]] = int(ls[1])
@@ -65,8 +65,6 @@ with open(plusreads, "r") as plus:
                 for i in tssminus[lastchr]:
                     readsminus.append(chrarray[i[0]:i[1]])
                 lastchr = c
-                print("lastchrchangedto  ", lastchr,
-                      " sum of chrarray: ", sum(chrarray))
                 if chr[c] > mid:
                     chrarray = np.zeros(chr[lastchr], np.int8)
                     chrarray[mid] = chrarray[mid] + 1
