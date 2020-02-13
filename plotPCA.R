@@ -50,7 +50,29 @@ vsd <- vst(as.matrix(merged), blind=FALSE)
 
 #Perform PCA
 pca= prcomp(vsd, center=T, scale=T)
-plot(pca$rotation[,1],pca$rotation[,2], xlab = "PC1", ylab = "PC2")
-text(pca$rotation[,1],pca$rotation[,2], row.names(pca$rotation), cex=0.5, pos=4)
+#Summary PCA
+summary(pca)
+#Label rows
+pca_data = data.frame(pca$rotation[,1],pca$rotation[,2],row.names = rownames(pca$rotation))
+colnames(pca_data)[1] = "pc1"
+colnames(pca_data)[2] = "pc2"
+pca_data$CellLine = c("Fibroblasts","Fibroblasts","Fibroblasts","Fibroblasts","Fibroblasts","Fibroblasts","Fibroblasts","Fibroblasts","B Lymphocytes","B Lymphocytes") 
+pca_data$Organism = c("Human","Mouse Lemur","Human","Mouse Lemur","Human","Mouse Lemur","Human","Mouse Lemur","Human","Human")
+pca_data$DamageType = c("CPD","CPD","CPD","CPD","6-4","6-4","6-4","6-4","CPD","CPD")
 
-#
+#draw the plot
+ggplot(pca_data,aes(x=pc1,y=pc2,color=DamageType,shape=Organism))+geom_point(size=7,alpha=0.7) + 
+    ggforce::geom_mark_ellipse(aes(label = CellLine, group = CellLine),color="Gray",con.colour = "gray",con.type="straight",label.colour = "Black",expand=0.03) + 
+    theme_minimal() + 
+    xlab("PC1 (%63.96)") +
+    ylab("PC2 (%13.95)") + 
+    xlim(0.20,0.38) +
+    scale_y_continuous() + 
+    theme(
+        axis.title.x = element_text(size = 14, vjust=-5),
+        axis.text.x = element_text(size = 14, vjust=-1),
+        axis.title.y = element_text(size = 14, vjust=5),
+        axis.text.y = element_text(size = 14, vjust=-1),
+        legend.title = element_text(size = 14),
+        legend.text = element_text(size = 10),
+        plot.margin=unit(c(1,1,1.5,1.2),"cm")) 
