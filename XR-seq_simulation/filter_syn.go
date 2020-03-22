@@ -3,9 +3,9 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 	"sort"
 	"time"
@@ -30,36 +30,40 @@ type Nuc struct {
 
 func main() {
 
-	xrfastqpath := os.Args[1]
-	simulatedfastqpath := os.Args[2]
-	filteredfastqpath := os.Args[3]
+	oligomerLengthPtr := flag.Int("length", 26, "length of oligomer")
+	numReadsPtr := flag.Int("numReads", 30000000, "number of reads in filtered fastq, must be smaller than inputFile's number of reads")
+	modelFastaPtr := flag.String("in", "./model.fa", "name of input fasta file, to extract frequencies")
+	synFastqPtr := flag.String("sim", "./simulated.fastq", "name of simulated input fastq file")
+	filteredFastqPtr := flag.String("out", "./filtered.fastq", "name of filtered output fastq file")
 
-	fmt.Println("Started reading xr fastq")
+	flag.Parse()
+
+	fmt.Println("Started reading input fasta")
 	start := time.Now()
-	xrfastq := readFastq(xrfastqpath)
+	modelFasta := readFasta(*modelFastaPtr, *oligomerLengthPtr)
 	elapsed := time.Since(start)
-	fmt.Printf("Finished reading xr fastq in: %s\n", elapsed)
+	fmt.Printf("Finished reading input fasta in: %s\n", elapsed)
 
-	fmt.Println("Started calculating xr frequency")
+	fmt.Println("Started calculating input frequency")
 	start = time.Now()
-	frequency := calculateFrequency(xrfastq)
+	frequency := calculateFrequency(modelFasta, *oligomerLengthPtr)
 	elapsed = time.Since(start)
-	fmt.Printf("Finished calculating xr frequency in: %s\n", elapsed)
+	fmt.Printf("Finished calculating input frequency in: %s\n", elapsed)
 
 	fmt.Println("Started reading simulated fastq")
 	start = time.Now()
-	fastqWscores := readAndScoreFastq(simulatedfastqpath, frequency)
+	fastqWscores := readAndScoreFastq(*synFastqPtr, frequency, *oligomerLengthPtr)
 	elapsed = time.Since(start)
 	fmt.Printf("Finished reading simulated fastq in: %s\n", elapsed)
 
 	fmt.Println("Started calculating simulated frequency")
 	start = time.Now()
-	simulatedFrequency := calculateFrequency(fastqWscores)
+	simulatedFrequency := calculateFrequency(fastqWscores, *oligomerLengthPtr)
 	elapsed = time.Since(start)
 	fmt.Printf("Finished calculating simulated frequency in: %s\n", elapsed)
 
 	fmt.Println("Frequency of simulated reads")
-	printFrequency(simulatedFrequency)
+	printFrequency(simulatedFrequency, "./starting_frequency.json")
 
 	fmt.Println("Started sorting simulated reads")
 	start = time.Now()
@@ -73,34 +77,40 @@ func main() {
 
 	fmt.Println("Started calculating filtered frequency")
 	start = time.Now()
-	filteredFrequency := calculateFrequency(fastqWscores[:10000000])
+	filteredFrequency := calculateFrequency(fastqWscores[:*numReadsPtr], *oligomerLengthPtr)
 	elapsed = time.Since(start)
 	fmt.Printf("Finished calculating filtered frequency in: %s\n", elapsed)
 
 	fmt.Println("Frequency of filtered reads")
-	printFrequency(filteredFrequency)
+	printFrequency(filteredFrequency, "./filtered_frequency.json")
 
 	fmt.Println("Writing filtered fastq to file")
 	start = time.Now()
-	writeFastq(filteredfastqpath, fastqWscores[:10000000])
+	writeFastq(*filteredFastqPtr, fastqWscores[:*numReadsPtr])
 	elapsed = time.Since(start)
 	fmt.Printf("Finished writing filtered fastq in: %s\n", elapsed)
 }
 
-func printFrequency(freq []Nuc) {
+func printFrequency(freq []Nuc, outfile string) {
 	b, err := json.Marshal(freq)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(string(b))
+	file, err := os.Create(outfile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+	writer := bufio.NewWriter(file)
+	writer.WriteString(string(b))
 }
 
-func calculateFrequency(records []Record) []Nuc {
+func calculateFrequency(records []Record, ol int) []Nuc {
 
 	length := float64(len(records))
 
-	counts := make([][]int, 26)
-	for i := 0; i < 26; i++ {
+	counts := make([][]int, ol)
+	for i := 0; i < ol; i++ {
 		counts[i] = make([]int, 4)
 	}
 	for _, r := range records {
@@ -161,7 +171,7 @@ func writeFastq(outfile string, records []Record) {
 
 }
 
-func readFastq(infile string) []Record {
+func readFastq(infile string, ol int) []Record {
 	file, err := os.Open(infile)
 	if err != nil {
 		log.Fatal(err)
@@ -187,7 +197,7 @@ func readFastq(infile string) []Record {
 			Seq:        seq,
 			Identifier: identifier,
 			Qual:       qual}
-		if len(rec.Seq) == 26 {
+		if len(rec.Seq) == ol {
 			fastq = append(fastq, rec)
 		}
 	}
@@ -195,8 +205,35 @@ func readFastq(infile string) []Record {
 	return fastq
 }
 
-func readAndScoreFastq(infile string, frequency []Nuc) []Record {
-	rand.Seed(time.Now().UnixNano())
+func readFasta(infile string, ol int) []Record {
+	file, err := os.Open(infile)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	var fasta []Record
+
+	for scanner.Scan() {
+
+		title := scanner.Text()
+		scanner.Scan()
+		seq := scanner.Text()
+
+		rec := Record{
+			Title: title,
+			Seq:   seq}
+		if len(rec.Seq) == ol {
+			fasta = append(fasta, rec)
+		}
+	}
+
+	return fasta
+}
+
+func readAndScoreFastq(infile string, frequency []Nuc, ol int) []Record {
 	file, err := os.Open(infile)
 	if err != nil {
 		log.Fatal(err)
@@ -224,7 +261,7 @@ func readAndScoreFastq(infile string, frequency []Nuc) []Record {
 			Identifier: identifier,
 			Qual:       qual,
 			Score:      score}
-		if len(rec.Seq) == 26 {
+		if len(rec.Seq) == ol {
 			fastq = append(fastq, rec)
 		}
 	}
