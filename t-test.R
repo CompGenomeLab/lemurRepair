@@ -28,7 +28,7 @@ for (i in c(0.0,2.5,5.0,7.5,10.0)) {
 data_64 = fread("data_64.txt")
 #Similarly, Immunoslot blot has the same columns.
 #Perform t-test
-for (i in c(0.0,2.5,5.0,7.5,10.0)) {
+for (i in c(0.5,1.0,2.0,4.0)) {
     
     x = data_64[which(rate == i & cline == "human"),]$values
     y = data_64[which(rate == i & cline == "lemur"),]$values
@@ -39,7 +39,7 @@ for (i in c(0.0,2.5,5.0,7.5,10.0)) {
 #Import Immunoslot blot repair assay data for CPD
 data_cpd = fread("data_cpd.txt")
 #Perform t-test
-for (i in c(0.0,2.5,5.0,7.5,10.0)) {
+for (i in c(8,16,24,32)) {
     
     x = data_cpd[which(rate == i & cline == "human"),]$values
     y = data_cpd[which(rate == i & cline == "lemur"),]$values
