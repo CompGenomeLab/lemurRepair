@@ -81,11 +81,11 @@ GOOS=linux go build main.go
     bedtools2-2.27.1
     plotly-4.1.0
 
-1. Run `parse_biomart.py` for both human and mouse lemur
+1. Run `tcr.py` for both human and mouse lemur
 
 Simple usage:
 ```bash
-python parse_biomart.py --biomart mart_lemur.txt --out ./lemur
+python tcr.py --biomart mart_lemur.txt --out ./lemur
 ```
 
 This will create two bed files for TSS and TES, if above script sample is used filenames will be `lemur_tss.bed` and `lemur_tes.bed`
